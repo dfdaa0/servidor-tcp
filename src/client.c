@@ -35,8 +35,8 @@ char* extensaoArquivo(const char* arquivo) { // funcionando
 char** splitString(const char* input) { // funcionando
 	char** palavras = (char**)malloc(MAX_PALAVRAS * sizeof(char));
 	for (int i = 0; i < MAX_PALAVRAS; i++) {
-	  palavras[i] = (char*)malloc(MAX_BYTES * sizeof(char));
-	  palavras[i][0] = '\0';
+		palavras[i] = (char*)malloc(MAX_BYTES * sizeof(char));
+		palavras[i][0] = '\0';
 	}
 
 	int posicao = 0;
@@ -44,13 +44,13 @@ char** splitString(const char* input) { // funcionando
 	char* token = strtok((char*)input, delimitador);
 
 	while (token != NULL && posicao < MAX_PALAVRAS) {
-	  strcpy(palavras[posicao], token);
-	  posicao++;
-	  token = strtok(NULL, delimitador);
+		strcpy(palavras[posicao], token);
+		posicao++;
+		token = strtok(NULL, delimitador);
 	}
 	while (posicao < MAX_PALAVRAS) {
-	  strcpy(palavras[posicao], "");
-	  posicao++;
+		strcpy(palavras[posicao], "");
+		posicao++;
 	}
 	return palavras;
 }
@@ -156,32 +156,46 @@ void enviaArquivo(int clientSocket, char* nomeArquivo) {
 		exit(1);
 	}
 
-	// Envia o nome do arquivo
-	size_t nomeArquivoSize = strlen(nomeArquivo) + 1; // Tamanho do nome do arquivo, incluindo o caractere nulo
-	if (send(clientSocket, nomeArquivo, nomeArquivoSize, 0) == -1) {
-		printf("Error trying to send file name\n");
+	// Obtém o tamanho do arquivo
+	fseek(file, 0, SEEK_END);
+	size_t fileSize = ftell(file);
+	rewind(file);
+
+	// Aloca um buffer para armazenar o conteúdo do arquivo
+	char* arquivoCompleto = (char*)malloc(fileSize + strlen(nomeArquivo) + 3);  // +3 para "::" e caractere nulo
+	if (arquivoCompleto == NULL) {
+		printf("Error allocating memory\n");
 		exit(1);
 	}
-	
-	// Lê e envia os buffers
-	char buffer[BUFFER_SIZE];
+
+	// Adiciona o nome do arquivo no início do conteúdo
+	strcpy(arquivoCompleto, nomeArquivo);
+	strcat(arquivoCompleto, "::");
+
+	// Lê o conteúdo do arquivo e adiciona ao buffer
+	size_t nomeArquivoSize = strlen(nomeArquivo);
 	size_t bytesRead;
-	while ((bytesRead = fread(buffer, sizeof(char), BUFFER_SIZE, file)) > 0) {
-		if (send(clientSocket, buffer, bytesRead, 0) == -1) {
-			printf("Error trying to send buffer\n");
-			exit(1);
-		}
-		printf("Buffer sent\n");
-	}
-	// Envio do marcador de fim de arquivo
-	const char* endMarker = "\\end";
-	if (send(clientSocket, endMarker, strlen(endMarker) + 1, 0) == -1) {
-		printf("Error trying to send end marker\n");
+	bytesRead = fread(arquivoCompleto + nomeArquivoSize + 2, sizeof(char), fileSize, file);
+	if (bytesRead != fileSize) {
+		printf("Error reading file\n");
 		exit(1);
 	}
-	printf("Last buffer sent\n");
+
+	// Fecha o arquivo
 	fclose(file);
+
+	// Envia o arquivo completo
+	if (send(clientSocket, arquivoCompleto, nomeArquivoSize + bytesRead + 2, 0) == -1) {
+		printf("Error trying to send file\n");
+		exit(1);
+	}
+
+	// Libera a memória alocada
+	free(arquivoCompleto);
+
+	printf("File sent\n");
 }
+
 
 
 int main(int argc, char* argv[]) {
