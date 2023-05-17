@@ -13,4 +13,5 @@ O usuário liga o servidor com o comando no formato "./server v4 51511". Nesse c
 O usuário liga o cliente com o comando no formato "./client 127.0.0.1 51511", também utilizando IPv4 na porta 51511. O cliente pode, a partir desse momento, usar os seguintes comandos:  
 - select file nomedoarquivo.extensao --> seleciona um arquivo, sendo sua existência e sua extensão checadas (apenas extensões 'tex', 'java', 'cpp', 'c', 'py' e 'txt' são permitidas por enquanto);
 - send file --> envia o arquivo selecionado;
-- exit --> fecha a conexão.
+- exit --> fecha a conexão.  
+Por questões de praticidade, o nome do arquivo é inserido dentro do mesmo como um cabeçalho, no formato "nomeArquivo::". Dessa forma, quando o servidor recebe o arquivo completo, ele procura a primeira instância do caractere ":" e considera o que há antes como o nome do arquivo. O servidor, então, escreve tudo o que recebeu em um arquivo de texto, idêntico ao original.
