@@ -35,8 +35,8 @@ char* extensaoArquivo(const char* arquivo) { // funcionando
 char** splitString(const char* input) { // funcionando
 	char** palavras = (char**)malloc(MAX_PALAVRAS * sizeof(char));
 	for (int i = 0; i < MAX_PALAVRAS; i++) {
-		palavras[i] = (char*)malloc(MAX_BYTES * sizeof(char));
-		palavras[i][0] = '\0';
+	  palavras[i] = (char*)malloc(MAX_BYTES * sizeof(char));
+	  palavras[i][0] = '\0';
 	}
 
 	int posicao = 0;
@@ -44,13 +44,13 @@ char** splitString(const char* input) { // funcionando
 	char* token = strtok((char*)input, delimitador);
 
 	while (token != NULL && posicao < MAX_PALAVRAS) {
-		strcpy(palavras[posicao], token);
-		posicao++;
-		token = strtok(NULL, delimitador);
+	  strcpy(palavras[posicao], token);
+	  posicao++;
+	  token = strtok(NULL, delimitador);
 	}
 	while (posicao < MAX_PALAVRAS) {
-		strcpy(palavras[posicao], "");
-		posicao++;
+	  strcpy(palavras[posicao], "");
+	  posicao++;
 	}
 	return palavras;
 }
@@ -195,6 +195,7 @@ void enviaArquivo(int clientSocket, char* nomeArquivo) {
 
 	printf("File sent\n");
 }
+
 
 
 
