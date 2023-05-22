@@ -70,6 +70,12 @@ void aguardaConexao(int serverSocket, int* connectionSocket, char* nomeArquivo) 
     }
     arquivoCompleto[bytesRead] = '\0'; // Adiciona o caractere nulo manualmente
 
+    // Remove a sequência "\end" caso esteja presente
+    size_t arquivoCompletoSize = strlen(arquivoCompleto);
+    if (arquivoCompletoSize >= 4 && strcmp(arquivoCompleto + arquivoCompletoSize - 4, "\\end") == 0) {
+      arquivoCompleto[arquivoCompletoSize - 4] = '\0';  // Remove a sequência "\end"
+    }
+
     // Extrai o nome do arquivo
     char* conteudoArquivo = strchr(arquivoCompleto, ':');
     *conteudoArquivo = '\0'; // Substitui o ':' por '\0' para separar o nome do conteúdo
@@ -100,6 +106,10 @@ void aguardaConexao(int serverSocket, int* connectionSocket, char* nomeArquivo) 
 
       printf("%s received\n", nomeArquivo);
     }
+
+    // Adiciona o caractere nulo ao final do conteúdo do arquivo
+    size_t conteudoArquivoSize = strlen(conteudoArquivo);
+    conteudoArquivo[conteudoArquivoSize] = '\0';  // Adiciona o caractere nulo ao final do conteúdo
 
     // Verifica se a conexão foi fechada pelo cliente
     if (bytesRead == 0) {
