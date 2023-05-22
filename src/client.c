@@ -14,6 +14,7 @@ Requisitos:
 #include <sys/socket.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <ctype.h>
 
 #define MAX_PALAVRAS 3
 #define MAX_BYTES 500
@@ -149,57 +150,65 @@ void selecionaArquivo(char* nomeArquivo) {
 }
 
 void enviaArquivo(int clientSocket, char* nomeArquivo) {
-	FILE* file = fopen(nomeArquivo, "rb");
-	if (file == NULL) {
-		printf("Error opening the archive\n");
-		perror("fopen");
-		exit(1);
-	}
+    FILE* file = fopen(nomeArquivo, "rb");
+    if (file == NULL) {
+        printf("Error opening the archive\n");
+        perror("fopen");
+        exit(1);
+    }
 
-	// Obtém o tamanho do arquivo
-	fseek(file, 0, SEEK_END);
-	size_t fileSize = ftell(file);
-	rewind(file);
+    // Obtém o tamanho do arquivo
+    fseek(file, 0, SEEK_END);
+    size_t fileSize = ftell(file);
+    rewind(file);
 
-	// Aloca um buffer para armazenar o conteúdo do arquivo
-	char* arquivoCompleto = (char*)malloc(fileSize + strlen(nomeArquivo) + 6);  // +6 para "::\end" e caractere nulo
-	if (arquivoCompleto == NULL) {
-		printf("Error allocating memory\n");
-		exit(1);
-	}
+    // Aloca um buffer para armazenar o conteúdo do arquivo
+    char* arquivoCompleto = (char*)malloc(fileSize + strlen(nomeArquivo) + 6);  // +6 para "::\end" e caractere nulo
+    if (arquivoCompleto == NULL) {
+        printf("Error allocating memory\n");
+        exit(1);
+    }
 
-	// Adiciona o nome do arquivo no início do conteúdo
-	strcat(arquivoCompleto, nomeArquivo);
-	size_t nomeArquivoSize = strlen(nomeArquivo);
-	arquivoCompleto[nomeArquivoSize] = '\0';  // Adiciona um caractere nulo após o nome do arquivo
-	strcat(arquivoCompleto, "::");
+    // Adiciona o nome do arquivo no início do conteúdo
+    strcat(arquivoCompleto, nomeArquivo);
+    size_t nomeArquivoSize = strlen(nomeArquivo);
+    arquivoCompleto[nomeArquivoSize] = '\0';  // Adiciona um caractere nulo após o nome do arquivo
+    strcat(arquivoCompleto, "::");
 
-	// Lê o conteúdo do arquivo e adiciona ao buffer
-	size_t bytesRead;
-	bytesRead = fread(arquivoCompleto + nomeArquivoSize + 2, sizeof(char), fileSize, file);
-	if (bytesRead != fileSize) {
-		printf("Error reading file\n");
-		exit(1);
-	}
+    // Lê o conteúdo do arquivo e adiciona ao buffer
+    size_t bytesRead;
+    bytesRead = fread(arquivoCompleto + nomeArquivoSize + 2, sizeof(char), fileSize, file);
+    if (bytesRead != fileSize) {
+        printf("Error reading file\n");
+        exit(1);
+    }
 
-	// Fecha o arquivo
-	fclose(file);
+    // Substitui caracteres especiais por espaços no conteúdo do arquivo
+    for (size_t i = nomeArquivoSize + 2; i < nomeArquivoSize + 2 + bytesRead; i++) {
+        char c = arquivoCompleto[i];
+        if (!isalnum(c) && c != ' ') {
+            arquivoCompleto[i] = ' '; // Substitui caracteres especiais por espaços
+        }
+    }
 
-	// Adiciona a sequência "\end" ao final do conteúdo
-	strcat(arquivoCompleto, "\\end");
-	size_t arquivoCompletoSize = strlen(arquivoCompleto);
-	arquivoCompleto[arquivoCompletoSize] = '\0';  // Substitui o caractere '\n' por um caractere nulo
+    // Fecha o arquivo
+    fclose(file);
 
-	// Envia o arquivo completo
-	if (send(clientSocket, arquivoCompleto, nomeArquivoSize + bytesRead + 6, 0) == -1) {
-		printf("Error trying to send file\n");
-		exit(1);
-	}
+    // Adiciona a sequência "\end" ao final do conteúdo
+    strcat(arquivoCompleto, "\\end");
+    size_t arquivoCompletoSize = strlen(arquivoCompleto);
+    arquivoCompleto[arquivoCompletoSize] = '\0';  // Substitui o caractere '\n' por um caractere nulo
 
-	// Libera a memória alocada
-	free(arquivoCompleto);
+    // Envia o arquivo completo
+    if (send(clientSocket, arquivoCompleto, nomeArquivoSize + bytesRead + 6, 0) == -1) {
+        printf("Error trying to send file\n");
+        exit(1);
+    }
 
-	printf("File sent\n");
+    // Libera a memória alocada
+    free(arquivoCompleto);
+
+    printf("File sent\n");
 }
 
 
@@ -247,7 +256,7 @@ int main(int argc, char* argv[]) {
 				close(clientSocket);
 				break;
 			}
-		}
+		} else close(clientSocket);
 	}
 
 	return 0;
