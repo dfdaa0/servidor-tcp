@@ -162,18 +162,19 @@ void enviaArquivo(int clientSocket, char* nomeArquivo) {
 	rewind(file);
 
 	// Aloca um buffer para armazenar o conteúdo do arquivo
-	char* arquivoCompleto = (char*)malloc(fileSize + strlen(nomeArquivo) + 3);  // +3 para "::" e caractere nulo
+	char* arquivoCompleto = (char*)malloc(fileSize + strlen(nomeArquivo) + 6);  // +6 para "::\end" e caractere nulo
 	if (arquivoCompleto == NULL) {
 		printf("Error allocating memory\n");
 		exit(1);
 	}
 
 	// Adiciona o nome do arquivo no início do conteúdo
-	strcpy(arquivoCompleto, nomeArquivo);
+	strcat(arquivoCompleto, nomeArquivo);
+	size_t nomeArquivoSize = strlen(nomeArquivo);
+	arquivoCompleto[nomeArquivoSize] = '\0';  // Adiciona um caractere nulo após o nome do arquivo
 	strcat(arquivoCompleto, "::");
 
 	// Lê o conteúdo do arquivo e adiciona ao buffer
-	size_t nomeArquivoSize = strlen(nomeArquivo);
 	size_t bytesRead;
 	bytesRead = fread(arquivoCompleto + nomeArquivoSize + 2, sizeof(char), fileSize, file);
 	if (bytesRead != fileSize) {
@@ -184,8 +185,13 @@ void enviaArquivo(int clientSocket, char* nomeArquivo) {
 	// Fecha o arquivo
 	fclose(file);
 
+	// Adiciona a sequência "\end" ao final do conteúdo
+	strcat(arquivoCompleto, "\\end");
+	size_t arquivoCompletoSize = strlen(arquivoCompleto);
+	arquivoCompleto[arquivoCompletoSize] = '\0';  // Substitui o caractere '\n' por um caractere nulo
+
 	// Envia o arquivo completo
-	if (send(clientSocket, arquivoCompleto, nomeArquivoSize + bytesRead + 2, 0) == -1) {
+	if (send(clientSocket, arquivoCompleto, nomeArquivoSize + bytesRead + 6, 0) == -1) {
 		printf("Error trying to send file\n");
 		exit(1);
 	}
@@ -195,8 +201,6 @@ void enviaArquivo(int clientSocket, char* nomeArquivo) {
 
 	printf("File sent\n");
 }
-
-
 
 
 int main(int argc, char* argv[]) {
